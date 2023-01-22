@@ -9,12 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getWallets = exports.storeSeedPhrase = void 0;
+exports.findWallet = exports.getWallets = exports.storeSeedPhrase = void 0;
 const client_1 = require("@prisma/client");
+const { createHash } = require('crypto');
 const prisma = new client_1.PrismaClient();
 const storeSeedPhrase = (mnemonic, label) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = createHash('sha256').update(mnemonic).digest('hex');
     return yield prisma.wallet.create({
-        data: { label, mnemonic },
+        data: {
+            label: label,
+            hash: hash,
+            mnemonic: mnemonic,
+        },
     }).then(() => __awaiter(void 0, void 0, void 0, function* () {
         prisma.$disconnect();
         yield Promise.resolve();
@@ -25,3 +31,11 @@ const getWallets = () => __awaiter(void 0, void 0, void 0, function* () {
     return yield prisma.wallet.findMany();
 });
 exports.getWallets = getWallets;
+const findWallet = (label) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma.wallet.findUnique({
+        where: {
+            hash: label,
+        }
+    });
+});
+exports.findWallet = findWallet;

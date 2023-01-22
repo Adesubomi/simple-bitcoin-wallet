@@ -23,6 +23,13 @@ program
     .requiredOption("-w, --wallet <type>", "Wallet for which to generate an address")
     .action(bitcoinjs_lib_1.generateAddress);
 program
+    .command("get-addresses")
+    .option("-w, --wallet <type>", "Wallet for which to generate an address")
+    .action(bitcoinjs_lib_1.getAllWallets);
+program
+    .command("verify-address")
+    .action(bitcoinjs_lib_1.getAllWallets);
+program
     .command("new-trx")
     .action(bitcoinjs_lib_1.newTransaction);
 program.parse(process.argv);
