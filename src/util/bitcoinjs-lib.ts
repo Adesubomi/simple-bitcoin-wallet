@@ -2,8 +2,11 @@ import { BIP32Interface } from "bip32";
 import { payments, Psbt } from "bitcoinjs-lib";
 import { Address, DecoratedUtxo } from "../types";
 import { Network } from 'bitcoinjs-lib';
+const ecc = require("tiny-secp256k1");
+const { BIP32Factory } = require('bip32')
 
-const bip32 = require("bip32");
+const bip32 = BIP32Factory(ecc);
+
 const bip39 = require("bip39");
 
 export const getNewMnemonic = (): string => {
@@ -49,7 +52,7 @@ export const getAddressFromChildPubkey = (
     });
 };
 
-export const createTransasction = async (
+export const createTransaction = async (
         utxos: DecoratedUtxo[],
         recipientAddress: string,
         amountInSatoshis: number,
@@ -64,3 +67,4 @@ export const signTransaction = async (
         ): Promise<Psbt> => {
     throw new Error("Function not implemented yet");
 };
+

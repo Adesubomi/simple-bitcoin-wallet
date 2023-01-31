@@ -1,22 +1,24 @@
 import chalk from "chalk";
 import {
     storeSeedPhrase,
-    getWallets, findWallet
+    getWallets, findWallet, getWalletLatestIndex, storeAddress
 } from "../data/wallet";
 
 const bitcoin = require('bitcoinjs-lib');
-const { BIP32Factory } = require('bip32')
+const { BIP32Factory, } = require('bip32')
 const {createHash} = require("crypto");
 const Table = require('cli-table');
 const ecc = require('tiny-secp256k1');
 const bip39 = require("bip39");
-const bip32 = BIP32Factory(ecc);
-
-
-import { BIP32Interface } from "bip32";
-import { payments, Psbt } from "bitcoinjs-lib";
 
 import { Address, DecoratedUtxo } from "../types";
+import {
+    deriveChildPublicKey,
+    getAddressFromChildPubkey,
+    getMasterPrivateKey,
+    getXpubFromPrivateKey
+} from "./bitcoinjs-lib";
+import {Network} from "ecpair/src/types";
 
 const generateMnemonic = (): string => {
     let mnemonic = bip39.generateMnemonic();
@@ -45,10 +47,9 @@ export const walletCreate = async (args: any[]): Promise<void> => {
 export const getAllWallets = async () => {
     await getWallets().then( wallets => {
         if (wallets && wallets.length > 0) {
-            console.log(wallets);
             const table = new Table({
                 head: ['#', 'Labels ', 'Addresses'],
-                colWidths: [12, 12, 12]
+                colWidths: [16, 16, 12]
             });
 
             const parsedWallets = wallets.map( walletX => {
@@ -77,36 +78,49 @@ export const getAllWallets = async () => {
 export const generateAddress = async (args: any): Promise<void> => {
     const walletLabel = args.wallet.toString();
 
-    await findWallet(walletLabel).then( wallet => {
-        const network = bitcoin.networks.regtest;
-        const mnemonic = wallet.mnemonic;
-        const path = `m/49'/0'/0'`;
-        const seed = bip39.mnemonicToSeedSync(mnemonic);
-        const root = bip32.fromSeed(seed, );
+    await findWallet(walletLabel).then( async wallet => {
+        const network = Network.regtest;
 
-        const account = root.derivePath(path);
-        const node = account.derive(0).derive(0);
+        if (wallet != null) {
+            const mnemonic = wallet.mnemonic;
+//            console.log("Mnemonic");
+//            console.log("    > "+ mnemonic);
+//            console.log("");
 
-        const btcAddress = bitcoin.payments.p2pkh({
-            pubkey: node.publicKey,
-            network: network,
-        }).address
+            const masterPrivateKey = await getMasterPrivateKey(mnemonic, network);
+//            console.log("Master Private Key ");
+//            console.log("    > "+ masterPrivateKey.toBase58());
+//            console.log("");
 
-        const segwitAddress = bitcoin.payments.p2sh({
-            redeem: bitcoin.payments.p2wpkh({
-                pubkey: node.publicKey,
-                network: network,
-            }),
-            network: network,
-        }).address;
+            const derivativePath = "m/84'/0'/0'/0";
+            const addressType = "bech32";
+            const xPub = getXpubFromPrivateKey(masterPrivateKey, derivativePath);
+//            console.log("xPub Key");
+//            console.log("    > "+ xPub);
+//            console.log("");
 
+            // get the latest index
+            const latestIndex = await getWalletLatestIndex(wallet.id);
+            const childDerivativePath = latestIndex +"";
+            const childPubKey = await deriveChildPublicKey(xPub, network, childDerivativePath);
+//            console.log("Child Pub Key");
+//            console.log("    > "+ childPubKey.toBase58());
+//            console.log("");
 
-        console.log(`Bitcoin address: ${btcAddress}`);
-        console.log(`SegWit address: ${segwitAddress}`);
+            const address = getAddressFromChildPubkey(childPubKey, network);
+//            console.log("Address");
+//            console.log("    > "+ address.address);
+//            console.log("");
 
-        // TODO [DANIEL]:: store the wallet...
+            storeAddress(address.address!, latestIndex, wallet.id, addressType).then(a => {
+                console.log(chalk.green(""));
+                console.log(chalk.green("        [✔] Address Genereated"));
+                console.log(chalk.green("            Address ["+ latestIndex +"] -> "+ address.address));
+            });
+        } else {
+            console.log(chalk.yellow("    [✗] No wallets found. First, create a wallet with the command `create --label=<my-label>`", wallet));
+        }
     });
-
 }
 
 export const getAddresses = async (args: any[]): Promise<void> => {

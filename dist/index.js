@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const clear = require('clear');
 const { Command, Option } = require('commander');
-const bitcoinjs_lib_1 = require("./util/bitcoinjs-lib");
+const util_1 = require("./util");
 clear();
 const program = new Command();
 program
@@ -13,23 +13,24 @@ program
     .version('0.0.1');
 program
     .command("create")
-    .action(bitcoinjs_lib_1.walletCreate);
+    .action(util_1.walletCreate);
 program
     .command("get-wallets")
-    .action(bitcoinjs_lib_1.getAllWallets);
+    .action(util_1.getAllWallets);
 program
     .command("generate-address")
     .description("Generate a new address under a wallet")
     .requiredOption("-w, --wallet <type>", "Wallet for which to generate an address")
-    .action(bitcoinjs_lib_1.generateAddress);
+    .action(util_1.generateAddress);
 program
     .command("get-addresses")
     .option("-w, --wallet <type>", "Wallet for which to generate an address")
-    .action(bitcoinjs_lib_1.getAllWallets);
+    .action(util_1.getAddresses);
 program
     .command("verify-address")
-    .action(bitcoinjs_lib_1.getAllWallets);
+    .requiredOption("-a, --address", "The address you want to verify")
+    .action(util_1.verifyAddress);
 program
-    .command("new-trx")
-    .action(bitcoinjs_lib_1.newTransaction);
+    .command("new-trx") // WIP
+    .action(util_1.newTransaction);
 program.parse(process.argv);

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findWallet = exports.getWallets = exports.storeSeedPhrase = void 0;
+exports.storeAddress = exports.getWalletLatestIndex = exports.findWallet = exports.getWallets = exports.storeSeedPhrase = void 0;
 const client_1 = require("@prisma/client");
 const { createHash } = require('crypto');
 const prisma = new client_1.PrismaClient();
@@ -31,11 +31,43 @@ const getWallets = () => __awaiter(void 0, void 0, void 0, function* () {
     return yield prisma.wallet.findMany();
 });
 exports.getWallets = getWallets;
-const findWallet = (label) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma.wallet.findUnique({
+const findWallet = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma.wallet.findFirst({
         where: {
-            hash: label,
+            hash: {
+                contains: id,
+            }
         }
     });
 });
 exports.findWallet = findWallet;
+const getWalletLatestIndex = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma.address.findFirst({
+        where: {
+            id: id,
+        },
+        orderBy: {
+            index: "desc"
+        }
+    }).then(address => {
+        if (address != null) {
+            return (address.index + 1);
+        }
+        return 0;
+    });
+});
+exports.getWalletLatestIndex = getWalletLatestIndex;
+const storeAddress = (address, index, walletId, addrType) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield prisma.address.create({
+        data: {
+            index: index,
+            address: address,
+            wallet_id: walletId,
+            type: addrType,
+        },
+    }).then(() => __awaiter(void 0, void 0, void 0, function* () {
+        prisma.$disconnect();
+        yield Promise.resolve();
+    }));
+});
+exports.storeAddress = storeAddress;

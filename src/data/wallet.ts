@@ -22,9 +22,42 @@ export const getWallets = async (): Promise<void | any[]> => {
 }
 
 export const findWallet = async (id: string): Promise<void | any> => {
-    return await prisma.wallet.findUnique({
+    return await prisma.wallet.findFirst({
         where: {
-            hash: id,
+            hash: {
+                contains: id,
+            }
         }
     })
+}
+
+export const getWalletLatestIndex = async (id: number): Promise<void | any> => {
+    return await prisma.address.findFirst({
+        where: {
+            id: id,
+        },
+        orderBy: {
+            index: "desc"
+        }
+    }).then( address => {
+        if (address != null) {
+            return (address.index+1);
+        }
+
+        return 0;
+    });
+}
+
+export const storeAddress = async (address: string, index: number, walletId: number, addrType: string): Promise<void | any> => {
+    return await prisma.address.create({
+        data: {
+            index: index,
+            address: address,
+            wallet_id: walletId,
+            type: addrType,
+        },
+    }).then( async () => {
+        prisma.$disconnect();
+        await Promise.resolve();
+    });
 }
