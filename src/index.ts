@@ -34,7 +34,8 @@ program
 
 program
     .command("get-addresses")
-    .option("-w, --wallet <type>", "Wallet for which to generate an address")
+    .description("Get list of addresses generated under a wallet")
+    .option("-w, --wallet <type>", "Wallet for which to get list of wallets")
     .action( getAddresses );
 
 program

@@ -61,3 +61,12 @@ export const storeAddress = async (address: string, index: number, walletId: num
         await Promise.resolve();
     });
 }
+
+export const getWalletAddresses = async (walletId: number): Promise<void | any[]> => {
+    return await prisma.address.findMany({
+        where: {
+            wallet_id: walletId,
+        }
+    });
+}
+

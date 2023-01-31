@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import {
     storeSeedPhrase,
-    getWallets, findWallet, getWalletLatestIndex, storeAddress
+    getWallets, findWallet, getWalletLatestIndex, storeAddress, getWalletAddresses
 } from "../data/wallet";
 
 const bitcoin = require('bitcoinjs-lib');
@@ -48,7 +48,7 @@ export const getAllWallets = async () => {
     await getWallets().then( wallets => {
         if (wallets && wallets.length > 0) {
             const table = new Table({
-                head: ['#', 'Labels ', 'Addresses'],
+                head: ['#', 'Labels', 'Addresses'],
                 colWidths: [16, 16, 12]
             });
 
@@ -79,9 +79,8 @@ export const generateAddress = async (args: any): Promise<void> => {
     const walletLabel = args.wallet.toString();
 
     await findWallet(walletLabel).then( async wallet => {
-        const network = Network.regtest;
-
         if (wallet != null) {
+            const network = Network.regtest;
             const mnemonic = wallet.mnemonic;
 //            console.log("Mnemonic");
 //            console.log("    > "+ mnemonic);
@@ -102,6 +101,11 @@ export const generateAddress = async (args: any): Promise<void> => {
             // get the latest index
             const latestIndex = await getWalletLatestIndex(wallet.id);
             const childDerivativePath = latestIndex +"";
+            if (latestIndex >= 9) {
+                console.log(chalk.yellow("    [?] You cannot generate more than 10 address for a wallet"));
+                return;
+            }
+
             const childPubKey = await deriveChildPublicKey(xPub, network, childDerivativePath);
 //            console.log("Child Pub Key");
 //            console.log("    > "+ childPubKey.toBase58());
@@ -123,8 +127,40 @@ export const generateAddress = async (args: any): Promise<void> => {
     });
 }
 
-export const getAddresses = async (args: any[]): Promise<void> => {
-    throw new Error("Function not implemented yet");
+export const getAddresses = async (args: any): Promise<void> => {
+    const walletLabel = args.wallet.toString();
+
+    await findWallet(walletLabel).then( async wallet => {
+        if (wallet != null) {
+
+            await getWalletAddresses(wallet.id).then( async addresses => {
+                if (addresses) {
+                    console.log(chalk.green(""));
+                    console.log(chalk.green(" List of addresses for wallet ["+ walletLabel +"]"));
+
+                    const table = new Table({
+                        head: ['Wallet', 'Index', 'Address'],
+                        colWidths: [12, 7, 50]
+                    });
+
+                    addresses.forEach( address => {
+                        table.push([
+                            wallet.label,
+                            address.index,
+                            address.address,
+                        ])
+                    })
+
+                    console.log(table.toString())
+                } else {
+                    console.log(chalk.yellow("    [✗] No addresses found for  wallet ["+ walletLabel +"]"));
+                }
+            });
+
+        } else {
+            console.log(chalk.yellow("    [✗] No wallets found. First, create a wallet with the command `create --label=<my-label>`", wallet));
+        }
+    });
 }
 
 export const verifyAddress = async (args: any[]): Promise<void> => {
