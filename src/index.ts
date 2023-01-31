@@ -5,7 +5,9 @@ import {
     walletCreate,
     getAllWallets,
     generateAddress,
-    newTransaction, } from "./util/bitcoinjs-lib";
+    newTransaction,
+    getAddresses,
+    verifyAddress } from "./util";
 
 clear();
 const program = new Command();
@@ -31,11 +33,18 @@ program
     .action( generateAddress );
 
 program
-    .command("new-trx")
+    .command("get-addresses")
+    .description("Get list of addresses generated under a wallet")
+    .option("-w, --wallet <type>", "Wallet for which to get list of wallets")
+    .action( getAddresses );
+
+program
+    .command("verify-address")
+    .requiredOption("-a, --address", "The address you want to verify")
+    .action( verifyAddress );
+
+program
+    .command("new-trx") // WIP
     .action( newTransaction );
 
 program.parse(process.argv);
-
-
-
-

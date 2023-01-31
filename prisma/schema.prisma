@@ -11,7 +11,18 @@ datasource db {
 }
 
 model Wallet {
-    id Int @id @default(autoincrement())
-    label String @unique
-    mnemonic String @unique
+  id        Int       @id @default(autoincrement())
+  label     String    @unique
+  hash      String    @unique
+  mnemonic  String    @unique
+  Addresses Address[]
+}
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  index     Int
+  wallet_id Int
+  wallet    Wallet @relation(fields: [wallet_id], references: [id])
+  type      String
+  address   String @unique
 }
